@@ -5,9 +5,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.validation.Valid;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -19,7 +23,7 @@ public class SuperStore {
    
     @GetMapping("/")
     public String getForm(Model model, @RequestParam(required = false) String id) {
-        model.addAttribute("categories", Constants.CATEGORIES);
+        //model.addAttribute("categories", Constants.CATEGORIES);
         int index = getIndex(id);
         //model.addAttribute("item", index == Constants.NOT_FOUND ? new Item() : itemList.get(index));
         if (index == Constants.NOT_FOUND) {
@@ -38,7 +42,15 @@ public class SuperStore {
     }
 
     @PostMapping("/submitItem")
-    public String submitForm(Item item, RedirectAttributes redirectAttributes) {
+    // NOTE THE BINDINGRESULT VARIABLE MUST BE THE NEXT IMMEDIATELY AFTER THE ITEM
+    public String submitForm(@Valid @ModelAttribute("item") Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        
+        if (item.getPrice() < item.getDiscount()) {
+            bindingResult.rejectValue("price", "", null, "Price cannot be less than discount");
+        }
+        if (bindingResult.hasErrors()) {
+            return "form";
+        }
         int index = getIndex(item.getId());
         String status = Constants.SUCCESS_STATUS;
         if (index == Constants.NOT_FOUND) {
